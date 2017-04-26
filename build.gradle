@@ -1,0 +1,29 @@
+buildscript {
+    dependencies {
+        classpath files("lib/kotlin-serialization-gradle.jar")
+    }
+}
+
+plugins {
+    id "org.jetbrains.kotlin.jvm" version "1.1.2"
+    id "application"
+}
+
+group 'org.jetbrains.kotlin'
+version '1.0-SNAPSHOT'
+
+mainClassName = "exercise.MainKt"
+
+repositories {
+    jcenter()
+}
+
+dependencies {
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jre8"
+    compile "org.jetbrains.kotlin:kotlin-reflect"
+    compile files("lib/kotlin-serialization-runtime.jar")
+}
+
+compileKotlin {
+    kotlinOptions.freeCompilerArgs += ["-Xplugin", "lib/kotlin-serialization-gradle.jar"]
+}
