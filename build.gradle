@@ -16,6 +16,8 @@ dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib-jre8"
     compile "org.jetbrains.kotlin:kotlin-reflect"
     compile files("lib/kotlin-serialization-runtime.jar")
+
+    testCompile 'io.kotlintest:kotlintest:2.0.0'
 }
 
 compileKotlin {
