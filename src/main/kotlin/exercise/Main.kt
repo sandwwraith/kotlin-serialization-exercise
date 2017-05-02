@@ -1,6 +1,5 @@
 package exercise
 
-import kotlin.serialization.JSON
 import kotlin.serialization.Serializable
 
 @Serializable
@@ -29,8 +28,11 @@ fun main(args: Array<String>) {
             listOf(Simple("kek"))
     )
     LoggingWriter.stringify(test)
-    println(JSON.stringify(test))
-    println(CBOR.dumps(test))
+//    println(JSON.stringify(test))
+//    println(CBOR.dumps(test))
+    val str = CBOR.dumps(test)
+    println(str)
+    println(CBOR.loads<SmallZoo>(str))
 //    val zooString = JSON.stringify(zoo)
 //    val zooAgain = JSON.parse<Zoo>(zooString)
 //    println("Zoo test passes: ${zooAgain == zoo}")
