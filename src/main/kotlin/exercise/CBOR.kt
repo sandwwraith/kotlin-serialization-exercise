@@ -4,6 +4,7 @@ import java.io.*
 import java.nio.ByteBuffer
 import javax.xml.bind.DatatypeConverter
 import kotlin.experimental.or
+import kotlin.reflect.KClass
 import kotlin.serialization.*
 
 /**
@@ -36,7 +37,7 @@ class CBOR {
         override fun writeElement(desc: KSerialClassDesc, index: Int): Boolean = desc.getElementName(index) != "size"
     }
 
-    open class CBORWriter(val encoder: CBOREncoder) : ElementValueOutput() {
+    internal open class CBORWriter(val encoder: CBOREncoder) : ElementValueOutput() {
 
         protected open fun writeBeginToken() = encoder.startMap()
 
@@ -74,9 +75,11 @@ class CBOR {
 
         override fun writeNullValue() = encoder.encodeNull()
 
+        override fun <T : Enum<T>> writeEnumValue(enumClass: KClass<T>, value: T) =
+                encoder.encodeString(value.toString())
     }
 
-    class CBOREncoder(val output: OutputStream) {
+    internal class CBOREncoder(val output: OutputStream) {
 
         fun startArray() = output.write(BEGIN_ARRAY)
         fun startMap() = output.write(BEGIN_MAP)
@@ -154,7 +157,7 @@ class CBOR {
         override fun skipBeginToken() = decoder.startMap()
     }
 
-    open class CBORListReader(decoder: CBORDecoder) : CBORReader(decoder) {
+    internal open class CBORListReader(decoder: CBORDecoder) : CBORReader(decoder) {
         private var ind = 0
 
         override fun skipBeginToken() = decoder.startArray()
@@ -162,7 +165,7 @@ class CBOR {
         override fun readElement(desc: KSerialClassDesc) = if (decoder.isEnd()) READ_DONE else ++ind
     }
 
-    open class CBORReader(val decoder: CBORDecoder) : ElementValueInput() {
+    internal open class CBORReader(val decoder: CBORDecoder) : ElementValueInput() {
 
         protected open fun skipBeginToken() = decoder.startMap()
 
@@ -201,9 +204,13 @@ class CBOR {
         override fun readLongValue() = decoder.nextNumber()
 
         override fun readNullValue() = decoder.nextNull()
+
+        override fun <T : Enum<T>> readEnumValue(enumClass: KClass<T>): T =
+                java.lang.Enum.valueOf(enumClass.java, decoder.nextString())
+
     }
 
-    class CBORDecoder(val input: InputStream) {
+    internal class CBORDecoder(val input: InputStream) {
         private var curByte: Int = -1
 
         init {
@@ -337,20 +344,24 @@ class CBOR {
         private const val HEADER_NEGATIVE: Byte = 0b001_00000
 
 
-        inline fun <reified T : Any> dump(obj: T): ByteArray {
+        fun <T : Any> dump(saver: KSerialSaver<T>, obj: T): ByteArray {
             val output = ByteArrayOutputStream()
             val dumper = CBORWriter(CBOREncoder(output))
-            dumper.write(T::class.serializer(), obj)
+            dumper.write(saver, obj)
             return output.toByteArray()
         }
 
+        inline fun <reified T : Any> dump(obj: T): ByteArray = dump(T::class.serializer(), obj)
+
         inline fun <reified T : Any> dumps(obj: T): String = DatatypeConverter.printHexBinary(dump(obj)).toLowerCase()
 
-        inline fun <reified T : Any> load(raw: ByteArray): T {
+        fun <T : Any> load(loader: KSerialLoader<T>, raw: ByteArray): T {
             val stream = ByteArrayInputStream(raw)
-            val loader = CBORReader(CBORDecoder(stream))
-            return loader.read(T::class.serializer())
+            val reader = CBORReader(CBORDecoder(stream))
+            return reader.read(loader)
         }
+
+        inline fun <reified T : Any> load(raw: ByteArray): T = load(T::class.serializer(), raw)
 
         inline fun <reified T : Any> loads(hex: String): T = load(DatatypeConverter.parseHexBinary(hex.toUpperCase()))
     }
