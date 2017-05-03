@@ -15,44 +15,43 @@ import javax.xml.bind.DatatypeConverter
 class CBORReaderTest : WordSpec() {
     init {
 
-        fun withTokenizer(input: String, block: CBOR.CBORTokenizer.() -> Unit) {
+        fun withDecoder(input: String, block: CBOR.CBORDecoder.() -> Unit) {
             val bytes = DatatypeConverter.parseHexBinary(input.toUpperCase())
-            val tokenizer = CBOR.CBORTokenizer(ByteArrayInputStream(bytes))
-            tokenizer.block()
+            CBOR.CBORDecoder(ByteArrayInputStream(bytes)).block()
         }
 
-        "Primitives reading" should {
-            "read integers" {
-                withTokenizer("0C1903E8", {
+        "CBOR Decoder" should {
+            "decode integers" {
+                withDecoder("0C1903E8", {
                     nextNumber() shouldBe 12L
                     nextNumber() shouldBe 1000L
                 })
-                withTokenizer("203903e7", {
+                withDecoder("203903e7", {
                     nextNumber() shouldBe -1L
                     nextNumber() shouldBe -1000L
                 })
             }
 
-            "read strings"{
-                withTokenizer("6568656C6C6F", {
+            "decode strings"{
+                withDecoder("6568656C6C6F", {
                     nextString() shouldBe "hello"
                 })
-                withTokenizer("7828737472696E672074686174206973206C6F6E676572207468616E2032332063686172616374657273", {
+                withDecoder("7828737472696E672074686174206973206C6F6E676572207468616E2032332063686172616374657273", {
                     nextString() shouldBe "string that is longer than 23 characters"
                 })
             }
 
-            "read floats and doubles" {
-                withTokenizer("fb7e37e43c8800759c", {
+            "decode floats and doubles" {
+                withDecoder("fb7e37e43c8800759c", {
                     nextDouble() shouldBe 1e+300
                 })
-                withTokenizer("fa47c35000", {
+                withDecoder("fa47c35000", {
                     nextFloat() shouldBe 100000.0f
                 })
             }
         }
 
-        "Object reading" should {
+        "CBOR Reader" should {
             "read simple object" {
                 CBOR.loads<Simple>("bf616163737472ff") shouldBe Simple("str")
             }

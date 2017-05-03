@@ -19,15 +19,15 @@ import javax.xml.bind.DatatypeConverter
 class CBORWriterTest : WordSpec() {
     init {
 
-        fun withWriterToString(block: CBOR.CBORWriter.() -> Unit): String {
+        fun withEncoder(block: CBOR.CBOREncoder.() -> Unit): String {
             val result = ByteArrayOutputStream()
-            CBOR.CBORWriter(result).block()
+            CBOR.CBOREncoder(result).block()
             return DatatypeConverter.printHexBinary(result.toByteArray()).toLowerCase()
         }
 
         // Examples from https://tools.ietf.org/html/rfc7049#appendix-A
-        "Primitives writing" should {
-            "serialize integers" {
+        "CBOR Encoder" should {
+            "encode integers" {
                 val tabl = table(
                         headers("input", "output"),
                         row(0, "00"),
@@ -38,22 +38,22 @@ class CBORWriterTest : WordSpec() {
                         row(-1000, "3903e7")
                 )
                 forAll(tabl) { input, output ->
-                    withWriterToString { writeIntValue(input) } shouldBe output
+                    withEncoder { encodeNumber(input.toLong()) } shouldBe output
                 }
             }
 
-            "serialize doubles" {
+            "encode doubles" {
                 val tabl = table(
                         headers("input", "output"),
                         row(1.0e+300, "fb7e37e43c8800759c"),
                         row(-4.1, "fbc010666666666666")
                 )
                 forAll(tabl) { input, output ->
-                    withWriterToString { writeDoubleValue(input) } shouldBe output
+                    withEncoder { encodeDouble(input) } shouldBe output
                 }
             }
 
-            "serialize strings" {
+            "encode strings" {
                 val tabl = table(
                         headers("input", "output"),
                         row("IETF", "6449455446"),
@@ -61,13 +61,13 @@ class CBORWriterTest : WordSpec() {
                         row("\ud800\udd51", "64f0908591")
                 )
                 forAll(tabl) { input, output ->
-                    withWriterToString { writeStringValue(input) } shouldBe output
+                    withEncoder { encodeString(input) } shouldBe output
                 }
             }
         }
 
         // Validated with http://cbor.me/
-        "Class writing" should {
+        "CBOR Writer" should {
             "serialize simple class" {
                 CBOR.dumps(Simple("str")) shouldBe "bf616163737472ff"
             }
