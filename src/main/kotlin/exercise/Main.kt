@@ -1,6 +1,15 @@
 package exercise
 
+import kotlin.serialization.JSON
 import kotlin.serialization.Serializable
+
+@Serializable
+data class Test(
+        val message: String
+)
+
+@Serializable
+data class Simple(val a: String)
 
 @Serializable
 data class SmallZoo(
@@ -13,27 +22,16 @@ data class SmallZoo(
         val innersList: List<Simple>
 )
 
-@Serializable
-data class Simple(val a: String)
-
 fun main(args: Array<String>) {
+    val test = Test("Hello, world!")
+    println(JSON.stringify(test))
+    println(CBOR.dumps(test))
 
-    val test = SmallZoo(
-            "Hello, world!",
-            42,
-            null,
-            listOf("a", "b"),
-            mapOf(1 to true, 2 to false),
-            Simple("lol"),
-            listOf(Simple("kek"))
-    )
-    LoggingWriter.stringify(test)
-//    println(JSON.stringify(test))
-//    println(CBOR.dumps(test))
-    val str = CBOR.dumps(test)
-    println(str)
-    println(CBOR.loads<SmallZoo>(str))
-//    val zooString = JSON.stringify(zoo)
-//    val zooAgain = JSON.parse<Zoo>(zooString)
-//    println("Zoo test passes: ${zooAgain == zoo}")
+    val zooString = JSON.stringify(zoo)
+    val zooAgain = JSON.parse<Zoo>(zooString)
+    println("Zoo JSON test passes: ${zooAgain == zoo}")
+
+    val zooBytes = CBOR.dump(zoo)
+    val zooAgainFromCBOR = CBOR.load<Zoo>(zooBytes)
+    println("Zoo test passes: ${zooAgainFromCBOR == zoo}")
 }

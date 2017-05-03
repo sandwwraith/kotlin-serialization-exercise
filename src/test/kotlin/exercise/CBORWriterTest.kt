@@ -1,6 +1,5 @@
-import exercise.CBOR
-import exercise.Simple
-import exercise.SmallZoo
+package exercise
+
 import io.kotlintest.matchers.shouldBe
 import io.kotlintest.properties.forAll
 import io.kotlintest.properties.headers
