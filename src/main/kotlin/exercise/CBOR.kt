@@ -15,7 +15,8 @@ import kotlin.serialization.*
 
 class CBOR {
 
-    internal class CBOREntryWriter(encoder: CBOREncoder) : CBORWriter(encoder) {
+    // Writes map entry as plain [key, value] pair, without bounds.
+    private class CBOREntryWriter(encoder: CBOREncoder) : CBORWriter(encoder) {
         override fun writeBeginToken() {
             // no-op
         }
@@ -27,17 +28,20 @@ class CBOR {
         override fun writeElement(desc: KSerialClassDesc, index: Int) = true
     }
 
-    internal class CBORMapWriter(encoder: CBOREncoder) : CBORListWriter(encoder) {
+    // Differs from List only in start byte
+    private class CBORMapWriter(encoder: CBOREncoder) : CBORListWriter(encoder) {
         override fun writeBeginToken() = encoder.startMap()
     }
 
-    internal open class CBORListWriter(encoder: CBOREncoder) : CBORWriter(encoder) {
+    // Writes all elements consequently, except size - CBOR supports maps and arrays of indefinite length
+    private open class CBORListWriter(encoder: CBOREncoder) : CBORWriter(encoder) {
         override fun writeBeginToken() = encoder.startArray()
 
         override fun writeElement(desc: KSerialClassDesc, index: Int): Boolean = desc.getElementName(index) != "size"
     }
 
-    internal open class CBORWriter(val encoder: CBOREncoder) : ElementValueOutput() {
+    // Writes class as map [fieldName, fieldValue]
+    private open class CBORWriter(val encoder: CBOREncoder) : ElementValueOutput() {
 
         protected open fun writeBeginToken() = encoder.startMap()
 
@@ -79,7 +83,8 @@ class CBOR {
                 encoder.encodeString(value.toString())
     }
 
-    internal class CBOREncoder(val output: OutputStream) {
+    // For details of representation, see https://tools.ietf.org/html/rfc7049#section-2.1
+    class CBOREncoder(val output: OutputStream) {
 
         fun startArray() = output.write(BEGIN_ARRAY)
         fun startMap() = output.write(BEGIN_MAP)
@@ -135,7 +140,7 @@ class CBOR {
         }
     }
 
-    internal class CBOREntryReader(decoder: CBORDecoder) : CBORReader(decoder) {
+    private class CBOREntryReader(decoder: CBORDecoder) : CBORReader(decoder) {
         private var ind = 0
 
         override fun skipBeginToken() {
@@ -153,11 +158,11 @@ class CBOR {
         }
     }
 
-    internal class CBORMapReader(decoder: CBORDecoder) : CBORListReader(decoder) {
+    private class CBORMapReader(decoder: CBORDecoder) : CBORListReader(decoder) {
         override fun skipBeginToken() = decoder.startMap()
     }
 
-    internal open class CBORListReader(decoder: CBORDecoder) : CBORReader(decoder) {
+    private open class CBORListReader(decoder: CBORDecoder) : CBORReader(decoder) {
         private var ind = 0
 
         override fun skipBeginToken() = decoder.startArray()
@@ -165,7 +170,7 @@ class CBOR {
         override fun readElement(desc: KSerialClassDesc) = if (decoder.isEnd()) READ_DONE else ++ind
     }
 
-    internal open class CBORReader(val decoder: CBORDecoder) : ElementValueInput() {
+    private open class CBORReader(val decoder: CBORDecoder) : ElementValueInput() {
 
         protected open fun skipBeginToken() = decoder.startMap()
 
@@ -210,7 +215,7 @@ class CBOR {
 
     }
 
-    internal class CBORDecoder(val input: InputStream) {
+    class CBORDecoder(val input: InputStream) {
         private var curByte: Int = -1
 
         init {
@@ -367,4 +372,4 @@ class CBOR {
     }
 }
 
-class CBORParsingException(message: String = "Unknown error") : IOException(message)
+class CBORParsingException(message: String) : IOException(message)

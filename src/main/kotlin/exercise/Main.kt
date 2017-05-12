@@ -8,20 +8,6 @@ data class Test(
         val message: String
 )
 
-@Serializable
-data class Simple(val a: String)
-
-@Serializable
-data class SmallZoo(
-        val str: String,
-        val i: Int,
-        val nullable: Double?,
-        val list: List<String>,
-        val map: Map<Int, Boolean>,
-        val inner: Simple,
-        val innersList: List<Simple>
-)
-
 fun main(args: Array<String>) {
     val test = Test("Hello, world!")
     println(JSON.stringify(test))
@@ -33,5 +19,5 @@ fun main(args: Array<String>) {
 
     val zooBytes = CBOR.dump(zoo)
     val zooAgainFromCBOR = CBOR.load<Zoo>(zooBytes)
-    println("Zoo test passes: ${zooAgainFromCBOR == zoo}")
+    println("Zoo CBOR test passes: ${zooAgainFromCBOR == zoo}")
 }
